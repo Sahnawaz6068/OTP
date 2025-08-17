@@ -7,28 +7,26 @@ const generateOTP = async (req, res) => {
   const phoneNo = req.body.phone;
 
   try {
-    const NumberResponse = checkNumber(phoneNo); //Check no. is valId or not
+    const NumberResponse = checkNumber(phoneNo);
 
     if (!NumberResponse) {
       throw new Error("Plese Enter valid Phone Number");
     }
 
-    const otp = generateOtp(); //Generate
+    const otp = generateOtp();
     console.log(otp);
-
-    otpStore[phoneNo] = {
-      otp, //Store otp in Local Storage
-      expiresAt: Date.now() + 2 * 60 * 1000,
-      used: false,
-      count: (otpStore[phoneNo]?.count || 0) + 1,//Each request pe increase by 1
-      firstRequestTime: otpStore[phoneNo]?.firstRequestTime || Date.now(),
-    };
 
     console.log("Otp store " + otpStore);
 
-    //LIMIT LOGIC
-    if (otpStore[phoneNo]) { //For phoneNo this check the time is more than 5 minute
+    if (otpStore[phoneNo]) {
       const userData = otpStore[phoneNo];
+
+      if (Date.now() - userData.lastSent < 1 * 60 * 1000) {
+        throw new Error(
+          `Plese try after ${(Date.now() - userData.lastSent) / 1000}`
+        );
+      }
+
       if (Date.now() - userData.firstRequestTime < 5 * 60 * 1000) {
         if (userData.count >= 3) {
           throw new Error(
@@ -37,9 +35,18 @@ const generateOTP = async (req, res) => {
         }
       } else {
         userData.count = 0;
-        userData.firstRequestTime = Date.now();;
+        userData.firstRequestTime = Date.now();
       }
     }
+
+    otpStore[phoneNo] = {
+      otp,
+      expiresAt: Date.now() + 2 * 60 * 1000,
+      used: false,
+      count: (otpStore[phoneNo]?.count || 0) + 1,
+      firstRequestTime: otpStore[phoneNo]?.firstRequestTime || Date.now(),
+      lastSent: Date.now(),
+    };
 
     const privacyNo = "xxxxxx" + phoneNo.slice(-4);
 
