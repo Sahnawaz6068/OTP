@@ -25,6 +25,8 @@ const verifyOtpControllers = async (req, res) => {
     // Mark OTP as used
     OtpData.used = true;
 
+    
+
     return res.status(200).json({ message: "OTP verified successfully" });
   } catch (err) {
     return res.status(500).json({ error: err.message });
